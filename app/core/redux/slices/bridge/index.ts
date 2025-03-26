@@ -11,11 +11,7 @@ import {
   selectEvmNetworkConfigurationsByChainId,
 } from '../../../../selectors/networkController';
 import { uniqBy } from 'lodash';
-import {
-  ALLOWED_BRIDGE_CHAIN_IDS,
-  AllowedBridgeChainIds,
-  BridgeFeatureFlagsKey,
-} from '@metamask/bridge-controller';
+import { ALLOWED_BRIDGE_CHAIN_IDS, AllowedBridgeChainIds, BridgeFeatureFlagsKey, formatChainIdToCaip } from '@metamask/bridge-controller';
 import { TokenI } from '../../../../components/UI/Tokens/types';
 
 export const selectBridgeControllerState = (state: RootState) =>
@@ -120,23 +116,15 @@ export const selectBridgeFeatureFlags = createSelector(
 export const selectEnabledSourceChains = createSelector(
   selectAllBridgeableNetworks,
   selectBridgeFeatureFlags,
-  (networks, bridgeFeatureFlags) =>
-    networks.filter(
-      ({ chainId }) =>
-        bridgeFeatureFlags[BridgeFeatureFlagsKey.MOBILE_CONFIG].chains[chainId]
-          ?.isActiveSrc,
-    ),
+  (networks, bridgeFeatureFlags) => networks.filter(({ chainId }) =>
+    bridgeFeatureFlags[BridgeFeatureFlagsKey.MOBILE_CONFIG].chains[formatChainIdToCaip(chainId)]?.isActiveSrc)
 );
 
 export const selectEnabledDestChains = createSelector(
   selectAllBridgeableNetworks,
   selectBridgeFeatureFlags,
-  (networks, bridgeFeatureFlags) =>
-    networks.filter(
-      ({ chainId }) =>
-        bridgeFeatureFlags[BridgeFeatureFlagsKey.MOBILE_CONFIG].chains[chainId]
-          ?.isActiveDest,
-    ),
+  (networks, bridgeFeatureFlags) => networks.filter(({ chainId }) =>
+    bridgeFeatureFlags[BridgeFeatureFlagsKey.MOBILE_CONFIG].chains[formatChainIdToCaip(chainId)]?.isActiveDest)
 );
 
 // Combined selectors for related state
