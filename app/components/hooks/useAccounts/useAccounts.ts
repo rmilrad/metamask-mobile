@@ -1,5 +1,5 @@
 // Third party dependencies.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { KeyringTypes } from '@metamask/keyring-controller';
 
@@ -45,11 +45,6 @@ const useAccounts = ({
   const selectedInternalAccount = useSelector(selectSelectedInternalAccount);
 
   const { multichainBalancesForAllAccounts } = useMultichainBalances();
-
-  console.log(
-    'useAccounts multichainBalancesForAllAccounts',
-    JSON.stringify(multichainBalancesForAllAccounts, null, 2),
-  );
 
   const isMultiAccountBalancesEnabled = useSelector(
     selectIsMultiAccountBalancesEnabled,
@@ -117,6 +112,32 @@ const useAccounts = ({
     [chainId],
   );
 
+  // Memoize the balance calculation to prevent it from causing re-renders
+  const accountBalances = useMemo(() => {
+    const balances: Record<
+      string,
+      {
+        displayBalance: string;
+        balanceError: string | undefined;
+      }
+    > = {};
+
+    internalAccounts.forEach((account) => {
+      const balanceForAccount = multichainBalancesForAllAccounts?.[account.id];
+      const displayBalance = balanceForAccount
+        ? `${balanceForAccount.displayBalance} \n ${balanceForAccount.totalNativeTokenBalance} ${balanceForAccount.nativeTokenUnit}`
+        : '';
+
+      const error = checkBalanceError?.(displayBalance);
+      balances[account.id] = {
+        displayBalance,
+        balanceError: typeof error === 'string' ? error : undefined,
+      };
+    });
+
+    return balances;
+  }, [internalAccounts, multichainBalancesForAllAccounts, checkBalanceError]);
+
   const getAccounts = useCallback(() => {
     if (!isMountedRef.current) return;
     // Keep track of the Y position of account item. Used for scrolling purposes.
@@ -132,36 +153,11 @@ const useAccounts = ({
           selectedIndex = index;
         }
 
-        // TODO - Improve UI to either include loading and/or balance load failures.
-        // TODO - Non EVM accounts like BTC do not use hex formatted balances. We will need to modify this to support multiple chains in the future.
-        // const { balanceETH, balanceFiat, balanceWH } = getAccountBalances({
-        //   internalAccount,
-        //   accountInfoByAddress,
-        //   totalFiatBalancesCrossChain,
-        //   conversionRate,
-        //   currentCurrency,
-        // });
+        const accountBalance = accountBalances[internalAccount.id] || {
+          displayBalance: '',
+          balanceError: undefined,
+        };
 
-        // const balanceTicker = getTicker(ticker);
-        const balanceForAccount =
-          multichainBalancesForAllAccounts?.[internalAccount.id];
-        console.log(
-          'useAccounts balanceForAccount',
-          JSON.stringify(balanceForAccount, null, 2),
-        );
-        const displayBalance = `${balanceForAccount.displayBalance} \n ${balanceForAccount.totalNativeTokenBalance} ${balanceForAccount.nativeTokenUnit}`;
-        // const balanceLabel = `${balanceFiat}\n${balanceETH} ${balanceTicker}`;
-        // console.log('balanceLabel', balanceLabel);
-
-        // const balanceWeiHex = safeBNToHex(
-        //   fiatNumberToWei(
-        //     multichainBalancesForAllAccounts?.[internalAccount.id]
-        //       .totalFiatBalance,
-        //     multichainBalancesForAllAccounts?.[internalAccount.id]
-        //       .conversionRate,
-        //   ),
-        // );
-        const balanceError = checkBalanceError?.(displayBalance);
         const isBalanceAvailable = isMultiAccountBalancesEnabled || isSelected;
         const mappedAccount: Account = {
           name: internalAccount.metadata.name,
@@ -172,16 +168,16 @@ const useAccounts = ({
           // TODO - Also fetch assets. Reference AccountList component.
           // assets
           assets:
-            isBalanceAvailable && displayBalance
+            isBalanceAvailable && accountBalance.displayBalance
               ? {
-                  fiatBalance: displayBalance,
+                  fiatBalance: accountBalance.displayBalance,
                 }
               : undefined,
-          balanceError,
+          balanceError: accountBalance.balanceError,
         };
         // Calculate height of the account item.
         yOffset += 78;
-        if (balanceError) {
+        if (accountBalance.balanceError) {
           yOffset += 22;
         }
         if (internalAccount.metadata.keyring.type !== KeyringTypes.hd) {
@@ -200,13 +196,11 @@ const useAccounts = ({
     internalAccounts,
     fetchENSNames,
     selectedInternalAccount?.address,
-    multichainBalancesForAllAccounts,
-    checkBalanceError,
+    accountBalances, // Use the memoized balances instead of multichainBalancesForAllAccounts
     isMultiAccountBalancesEnabled,
   ]);
 
   useEffect(() => {
-    // eslint-disable-next-line
     if (!isMountedRef.current) {
       isMountedRef.current = true;
     }

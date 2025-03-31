@@ -35,7 +35,7 @@ import {
 import { selectSelectedNonEvmNetworkChainId } from '../../../selectors/multichainNetworkController';
 ///: END:ONLY_INCLUDE_IF
 import I18n from '../../../../locales/i18n';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { isEvmAccountType } from '@metamask/keyring-api';
 
 /**
@@ -44,6 +44,20 @@ import { isEvmAccountType } from '@metamask/keyring-api';
  * @returns Portfolio balance data
  */
 const useMultichainBalances = (): UseMultichainBalancesHook => {
+  // Refs to track which dependencies change between renders
+  const prevDepsRef = useRef<{
+    accountsList?: any;
+    chainId?: string;
+    currentCurrency?: string;
+    isTokenNetworkFilterEqualCurrentNetwork?: boolean;
+    isPopularNetwork?: boolean;
+    isOriginalNativeTokenSymbol?: boolean;
+    formattedTokensWithBalancesPerChain?: any;
+    totalFiatBalancesCrossChain?: any;
+    providerType?: string;
+    ticker?: string;
+  }>({});
+
   // Production selectors (EVM)
   const accountsList = useSelector(selectInternalAccounts);
   const selectedInternalAccount = useSelector(selectSelectedInternalAccount);
@@ -74,6 +88,88 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
     ticker,
     type,
   );
+
+  // Add render tracking to identify which dependencies change
+  useEffect(() => {
+    // Compare current values with previous values
+    const depsChanged = [];
+
+    if (prevDepsRef.current.accountsList !== accountsList) {
+      depsChanged.push('accountsList');
+    }
+
+    if (prevDepsRef.current.chainId !== chainId) {
+      depsChanged.push('chainId');
+    }
+
+    if (prevDepsRef.current.currentCurrency !== currentCurrency) {
+      depsChanged.push('currentCurrency');
+    }
+
+    if (
+      prevDepsRef.current.isTokenNetworkFilterEqualCurrentNetwork !==
+      isTokenNetworkFilterEqualCurrentNetwork
+    ) {
+      depsChanged.push('isTokenNetworkFilterEqualCurrentNetwork');
+    }
+
+    if (prevDepsRef.current.isPopularNetwork !== isPopularNetwork) {
+      depsChanged.push('isPopularNetwork');
+    }
+
+    if (
+      prevDepsRef.current.isOriginalNativeTokenSymbol !==
+      isOriginalNativeTokenSymbol
+    ) {
+      depsChanged.push('isOriginalNativeTokenSymbol');
+    }
+
+    if (prevDepsRef.current.providerType !== type) {
+      depsChanged.push('providerType');
+    }
+
+    if (prevDepsRef.current.ticker !== ticker) {
+      depsChanged.push('ticker');
+    }
+
+    // Check if formattedTokensWithBalancesPerChain changed (this is a complex object)
+    if (
+      prevDepsRef.current.formattedTokensWithBalancesPerChain !==
+      formattedTokensWithBalancesPerChain
+    ) {
+      depsChanged.push('formattedTokensWithBalancesPerChain');
+    }
+
+    // Check if totalFiatBalancesCrossChain changed (this is a complex object)
+    if (
+      prevDepsRef.current.totalFiatBalancesCrossChain !==
+      totalFiatBalancesCrossChain
+    ) {
+      depsChanged.push('totalFiatBalancesCrossChain');
+    }
+
+    // Log only if something changed
+    if (depsChanged.length > 0) {
+      console.log(
+        'useMultichainBalances dependencies changed:',
+        depsChanged.join(', '),
+      );
+    }
+
+    // Update refs for next comparison
+    prevDepsRef.current = {
+      accountsList,
+      chainId,
+      currentCurrency,
+      isTokenNetworkFilterEqualCurrentNetwork,
+      isPopularNetwork,
+      isOriginalNativeTokenSymbol,
+      formattedTokensWithBalancesPerChain,
+      totalFiatBalancesCrossChain,
+      providerType: type,
+      ticker,
+    };
+  });
 
   ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
   const shouldShowFiat = useSelector(selectMultichainShouldShowFiat);
@@ -237,38 +333,38 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
 
   const isPortfolioEnabled = isPortfolioViewEnabled();
 
-  const allAccountBalances = useMemo(
-    () =>
-      accountsList.reduce((acc, account) => {
-        const accountBalanceData = getAccountBalanceData(account);
-        return {
-          ...acc,
-          [account.id]: {
-            displayBalance: accountBalanceData.displayBalance,
-            displayCurrency: currentCurrency,
-            totalFiatBalance: accountBalanceData.totalFiatBalance,
-            totalNativeTokenBalance: accountBalanceData.totalNativeTokenBalance,
-            nativeTokenUnit: accountBalanceData.nativeTokenUnit,
-            tokenFiatBalancesCrossChains:
-              totalFiatBalancesCrossChain[account.address]
-                ?.tokenFiatBalancesCrossChains ?? [],
-            shouldShowAggregatedPercentage:
-              getShouldShowAggregatedPercentage(account),
-            isPortfolioVieEnabled: isPortfolioEnabled,
-            aggregatedBalance: getAggregatedBalance(account),
-          },
-        };
-      }, {} as Record<string, MultichainBalancesData>),
-    [
-      accountsList,
-      currentCurrency,
-      getAccountBalanceData,
-      getShouldShowAggregatedPercentage,
-      isPortfolioEnabled,
-      totalFiatBalancesCrossChain,
-      getAggregatedBalance,
-    ],
-  );
+  // Create a stable reference for each account's balance data
+  const allAccountBalances = useMemo(() => {
+    const result: Record<string, MultichainBalancesData> = {};
+
+    for (const account of accountsList) {
+      const accountBalanceData = getAccountBalanceData(account);
+      result[account.id] = {
+        displayBalance: accountBalanceData.displayBalance,
+        displayCurrency: currentCurrency,
+        totalFiatBalance: accountBalanceData.totalFiatBalance,
+        totalNativeTokenBalance: accountBalanceData.totalNativeTokenBalance,
+        nativeTokenUnit: accountBalanceData.nativeTokenUnit,
+        tokenFiatBalancesCrossChains:
+          totalFiatBalancesCrossChain[account.address]
+            ?.tokenFiatBalancesCrossChains ?? [],
+        shouldShowAggregatedPercentage:
+          getShouldShowAggregatedPercentage(account),
+        isPortfolioVieEnabled: isPortfolioEnabled,
+        aggregatedBalance: getAggregatedBalance(account),
+      };
+    }
+
+    return result;
+  }, [
+    accountsList,
+    currentCurrency,
+    getAccountBalanceData,
+    getShouldShowAggregatedPercentage,
+    isPortfolioEnabled,
+    totalFiatBalancesCrossChain,
+    getAggregatedBalance,
+  ]);
 
   const selectedAccountMultichainBalance = useMemo(() => {
     if (selectedInternalAccount) {
