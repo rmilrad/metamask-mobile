@@ -89,11 +89,6 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
       const balance = Engine.getTotalFiatAccountBalance(account);
       let total;
 
-      console.log(
-        'getEvmBalance getTotalFiatAccountBalance',
-        JSON.stringify(balance, null, 2),
-      );
-
       if (isOriginalNativeTokenSymbol) {
         if (isPortfolioViewEnabled()) {
           total =
@@ -120,8 +115,8 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
       return {
         displayBalance,
         totalFiatBalance: total,
-        totalNativeTokenBalance: balance?.totalNativeTokenBalance ?? 0,
-        nativeTokenUnit: 'ETH',
+        totalNativeTokenBalance: balance?.totalNativeTokenBalance,
+        nativeTokenUnit: balance?.ticker,
       };
     },
     [currentCurrency, isOriginalNativeTokenSymbol, totalFiatBalancesCrossChain],

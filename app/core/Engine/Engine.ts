@@ -1557,6 +1557,7 @@ export class Engine {
     tokenFiat1dAgo: number;
     ethFiat1dAgo: number;
     totalNativeTokenBalance: string;
+    ticker: string;
   } => {
     const {
       CurrencyRateController,
@@ -1591,6 +1592,7 @@ export class Engine {
           ethFiat1dAgo: 0,
           tokenFiat1dAgo: 0,
           totalNativeTokenBalance: '0',
+          ticker: '',
         };
       }
 
@@ -1703,6 +1705,7 @@ export class Engine {
         tokenFiat: tokenFiat ?? 0,
         tokenFiat1dAgo: tokenFiat1dAgo ?? 0,
         totalNativeTokenBalance: totalNativeTokenBalance ?? '0',
+        ticker,
       };
     }
     // if selectedInternalAccount is undefined, return default 0 value.
@@ -1712,6 +1715,7 @@ export class Engine {
       ethFiat1dAgo: 0,
       tokenFiat1dAgo: 0,
       totalNativeTokenBalance: '0',
+      ticker: '',
     };
   };
 
