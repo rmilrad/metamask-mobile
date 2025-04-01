@@ -3,7 +3,7 @@ import { renderScreen } from '../../../../../util/test/renderWithProvider';
 import { BridgeDestTokenSelector } from '.';
 import Routes from '../../../../../constants/navigation/Routes';
 import { setDestToken } from '../../../../../core/redux/slices/bridge';
-import { initialState, ethToken1Address, ethToken2Address } from '../../_mocks_/initialState';
+import { initialState, ethToken2Address } from '../../_mocks_/initialState';
 
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
