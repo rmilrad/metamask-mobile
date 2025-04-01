@@ -13,6 +13,7 @@ import {
 import { uniqBy } from 'lodash';
 import { ALLOWED_BRIDGE_CHAIN_IDS, AllowedBridgeChainIds, BridgeFeatureFlagsKey, formatChainIdToCaip } from '@metamask/bridge-controller';
 import { BridgeToken } from '../../../../components/UI/Bridge/types';
+import { PopularList } from '../../../../util/networks/customNetworks';
 
 export const selectBridgeControllerState = (state: RootState) =>
   state.engine.backgroundState?.BridgeController;
@@ -123,8 +124,20 @@ export const selectEnabledSourceChains = createSelector(
 export const selectEnabledDestChains = createSelector(
   selectAllBridgeableNetworks,
   selectBridgeFeatureFlags,
-  (networks, bridgeFeatureFlags) => networks.filter(({ chainId }) =>
-    bridgeFeatureFlags[BridgeFeatureFlagsKey.MOBILE_CONFIG].chains[formatChainIdToCaip(chainId)]?.isActiveDest)
+  (networks, bridgeFeatureFlags) => {
+    // We always want to show the popular list in the destination chain selector
+    const popularListFormatted = PopularList.map(({ chainId, nickname, rpcUrl, ticker, rpcPrefs }) => ({
+      chainId,
+      name: nickname,
+      rpcUrl,
+      ticker,
+      rpcPrefs,
+    }));
+
+    return uniqBy([...networks, ...popularListFormatted], 'chainId')
+      .filter(({ chainId }) =>
+        bridgeFeatureFlags[BridgeFeatureFlagsKey.MOBILE_CONFIG].chains[formatChainIdToCaip(chainId)]?.isActiveDest);
+  }
 );
 
 // Combined selectors for related state
