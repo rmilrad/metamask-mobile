@@ -1549,7 +1549,7 @@ export class Engine {
     AccountTrackerController.refresh();
   }
 
-  getTotalFiatAccountBalance = (
+  getTotalEvmFiatAccountBalance = (
     account?: InternalAccount,
   ): {
     ethFiat: number;
@@ -1601,7 +1601,11 @@ export class Engine {
         0;
 
       const { accountsByChainId } = AccountTrackerController.state;
-      const { tokens } = TokensController.state;
+      const chainIdHex = toHexadecimal(chainId);
+      const tokens =
+        TokensController.state.allTokens?.[chainIdHex]?.[
+          selectedInternalAccount.address
+        ] || [];
       const { marketData } = TokenRatesController.state;
       const tokenExchangeRates = marketData?.[toHexadecimal(chainId)];
 
@@ -1796,7 +1800,7 @@ export class Engine {
         }
       }
 
-      const fiatBalance = this.getTotalFiatAccountBalance() || 0;
+      const fiatBalance = this.getTotalEvmFiatAccountBalance() || 0;
       const totalFiatBalance = fiatBalance.ethFiat + fiatBalance.ethFiat;
 
       return totalFiatBalance > 0 || tokenFound || nfts.length > 0;
@@ -2075,9 +2079,9 @@ export default {
     return instance.datamodel;
   },
 
-  getTotalFiatAccountBalance(account?: InternalAccount) {
+  getTotalEvmFiatAccountBalance(account?: InternalAccount) {
     assertEngineExists(instance);
-    return instance.getTotalFiatAccountBalance(account);
+    return instance.getTotalEvmFiatAccountBalance(account);
   },
 
   hasFunds() {

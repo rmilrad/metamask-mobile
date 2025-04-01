@@ -88,7 +88,7 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
   // Production balance calculartion (EVM)
   const getEvmBalance = useCallback(
     (account: InternalAccount) => {
-      const balance = Engine.getTotalFiatAccountBalance(account);
+      const balance = Engine.getTotalEvmFiatAccountBalance(account);
       let total;
 
       if (isOriginalNativeTokenSymbol) {
@@ -101,7 +101,7 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
           const ethFiatTotal = balance?.ethFiat ?? 0;
           total = tokenFiatTotal + ethFiatTotal;
         }
-      } else if (isPortfolioViewEnabled()) {
+      } else if (isPortfolioEnabled) {
         total =
           totalFiatBalancesCrossChain[account?.address as string]
             ?.totalTokenFiat ?? 0;
@@ -173,7 +173,7 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
 
   const getAggregatedBalance = useMemo(
     () => (account: InternalAccount) => {
-      const balance = Engine.getTotalFiatAccountBalance(account);
+      const balance = Engine.getTotalEvmFiatAccountBalance(account);
       return {
         ethFiat: balance?.ethFiat ?? 0,
         tokenFiat: balance?.tokenFiat ?? 0,

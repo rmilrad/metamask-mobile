@@ -49,7 +49,7 @@ jest.mock('react-redux', () => ({
 }));
 
 jest.mock('../../../core/Engine', () => ({
-  getTotalFiatAccountBalance: jest.fn(),
+  getTotalEvmFiatAccountBalance: jest.fn(),
 }));
 
 jest.mock('../useGetFormattedTokensPerChain', () => ({
@@ -82,7 +82,7 @@ describe('useMultichainBalances', () => {
       ethFiat1dAgo: 0,
     };
 
-    (Engine.getTotalFiatAccountBalance as jest.Mock).mockReturnValue(
+    (Engine.getTotalEvmFiatAccountBalance as jest.Mock).mockReturnValue(
       aggregatedBalance,
     );
 
@@ -108,7 +108,7 @@ describe('useMultichainBalances', () => {
       ethFiat1dAgo: 95,
     };
 
-    (Engine.getTotalFiatAccountBalance as jest.Mock).mockReturnValue(
+    (Engine.getTotalEvmFiatAccountBalance as jest.Mock).mockReturnValue(
       aggregatedBalance,
     );
 
