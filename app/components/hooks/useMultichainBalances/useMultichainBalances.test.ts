@@ -88,7 +88,7 @@ describe('useMultichainBalances', () => {
 
     const { result } = renderHook(() => useMultichainBalances());
 
-    expect(result.current.multichainBalances).toEqual({
+    expect(result.current.multichainBalancesForAllAccounts).toEqual({
       displayBalance: '$0.00',
       displayCurrency: 'USD',
       tokenFiatBalancesCrossChains: [],
@@ -114,10 +114,12 @@ describe('useMultichainBalances', () => {
 
     const { result } = renderHook(() => useMultichainBalances());
 
-    expect(result.current.multichainBalances.displayBalance).toBe('$150.00');
-    expect(result.current.multichainBalances.aggregatedBalance).toEqual(
-      aggregatedBalance,
+    expect(result.current.multichainBalancesForAllAccounts.displayBalance).toBe(
+      '$150.00',
     );
+    expect(
+      result.current.multichainBalancesForAllAccounts.aggregatedBalance,
+    ).toEqual(aggregatedBalance);
   });
 
   it('handles portfolio view mode correctly', () => {
@@ -162,14 +164,18 @@ describe('useMultichainBalances', () => {
 
     const { result } = renderHook(() => useMultichainBalances());
 
-    expect(result.current.multichainBalances.isPortfolioVieEnabled).toBe(true);
-    expect(result.current.multichainBalances.totalFiatBalance).toBe(
-      mockTotalFiatBalance,
-    );
-    expect(result.current.multichainBalances.totalTokenFiat).toBe(
+    expect(
+      result.current.multichainBalancesForAllAccounts.isPortfolioVieEnabled,
+    ).toBe(true);
+    expect(
+      result.current.multichainBalancesForAllAccounts.totalFiatBalance,
+    ).toBe(mockTotalFiatBalance);
+    expect(result.current.multichainBalancesForAllAccounts.totalTokenFiat).toBe(
       mockTokenFiatBalance,
     );
-    expect(result.current.multichainBalances.displayBalance).toBe('$1,000.00');
+    expect(result.current.multichainBalancesForAllAccounts.displayBalance).toBe(
+      '$1,000.00',
+    );
   });
 
   it('does not show aggregated percentage on test networks', () => {
@@ -178,7 +184,8 @@ describe('useMultichainBalances', () => {
     const { result } = renderHook(() => useMultichainBalances());
 
     expect(
-      result.current.multichainBalances.shouldShowAggregatedPercentage,
+      result.current.multichainBalancesForAllAccounts
+        .shouldShowAggregatedPercentage,
     ).toBe(false);
   });
 });

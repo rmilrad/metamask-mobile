@@ -34,7 +34,8 @@ export const Carousel: FC<CarouselProps> = ({ style }) => {
   const { navigate } = useNavigation();
   const { styles } = useStyles(styleSheet, { style });
   const dismissedBanners = useSelector(selectDismissedBanners);
-  const isZeroBalance = selectedAccountMultichainBalance.totalFiatBalance === 0;
+  const isZeroBalance =
+    selectedAccountMultichainBalance?.totalFiatBalance === 0;
 
   const slidesConfig = useMemo(
     () =>

@@ -14,9 +14,9 @@ export interface MultichainBalancesData {
   totalFiatBalance: string;
   totalNativeTokenBalance: string;
   nativeTokenUnit: string;
-  aggregatedBalance: AggregatedPercentageProps;
   shouldShowAggregatedPercentage: boolean;
   isPortfolioVieEnabled: boolean;
+  aggregatedBalance: AggregatedPercentageProps;
 }
 
 export interface UseMultichainBalancesHook {

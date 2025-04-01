@@ -18,7 +18,7 @@ const AccountNetworkInfoExpanded = () => {
   const fromAddress = signatureRequest?.messageParams?.from as string;
   const { accountAddress } = useAccountInfo(fromAddress);
   const { selectedAccountMultichainBalance } = useMultichainBalances();
-  const balanceToDisplay = selectedAccountMultichainBalance.displayBalance;
+  const balanceToDisplay = selectedAccountMultichainBalance?.displayBalance;
 
   return (
     <View>
