@@ -120,7 +120,7 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
       return {
         displayBalance,
         totalFiatBalance: total,
-        totalNativeTokenBalance: balance?.tokenFiat ?? 0,
+        totalNativeTokenBalance: balance?.totalNativeTokenBalance ?? 0,
         nativeTokenUnit: 'ETH',
       };
     },

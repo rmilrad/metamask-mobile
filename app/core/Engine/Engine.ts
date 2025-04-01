@@ -86,6 +86,7 @@ import {
   toHexadecimal,
   addHexPrefix,
   hexToBN,
+  renderFromWei,
 } from '../../util/number';
 import NotificationManager from '../NotificationManager';
 import Logger from '../../util/Logger';
@@ -135,6 +136,7 @@ import { ClientId } from '@metamask/smart-transactions-controller/dist/types';
 import { zeroAddress } from 'ethereumjs-util';
 import {
   ApprovalType,
+  convertHexToDecimal,
   handleFetch,
   type ChainId,
 } from '@metamask/controller-utils';
@@ -1554,6 +1556,7 @@ export class Engine {
     tokenFiat: number;
     tokenFiat1dAgo: number;
     ethFiat1dAgo: number;
+    totalNativeTokenBalance: string;
   } => {
     const {
       CurrencyRateController,
@@ -1582,7 +1585,13 @@ export class Engine {
       const { settings: { showFiatOnTestnets } = {} } = store.getState();
 
       if (isTestNet(chainId) && !showFiatOnTestnets) {
-        return { ethFiat: 0, tokenFiat: 0, ethFiat1dAgo: 0, tokenFiat1dAgo: 0 };
+        return {
+          ethFiat: 0,
+          tokenFiat: 0,
+          ethFiat1dAgo: 0,
+          tokenFiat1dAgo: 0,
+          totalNativeTokenBalance: '0',
+        };
       }
 
       const conversionRate =
@@ -1598,6 +1607,7 @@ export class Engine {
       let ethFiat1dAgo = 0;
       let tokenFiat = 0;
       let tokenFiat1dAgo = 0;
+      let totalNativeTokenBalance = '0';
       const decimalsToShow = (currentCurrency === 'usd' && 2) || undefined;
       if (
         accountsByChainId?.[toHexadecimal(chainId)]?.[
@@ -1610,6 +1620,15 @@ export class Engine {
             selectedInternalAccountFormattedAddress
           ].balance,
         );
+
+        totalNativeTokenBalance = renderFromWei(
+          convertHexToDecimal(
+            accountsByChainId[toHexadecimal(chainId)][
+              selectedInternalAccountFormattedAddress
+            ].balance,
+          ),
+        );
+
         // TODO - Non EVM accounts like BTC do not use hex formatted balances. We will need to modify this to use CAIP-2 identifiers in the future.
         const stakedBalanceBN = hexToBN(
           accountsByChainId[toHexadecimal(chainId)][
@@ -1683,6 +1702,7 @@ export class Engine {
         ethFiat1dAgo: ethFiat1dAgo ?? 0,
         tokenFiat: tokenFiat ?? 0,
         tokenFiat1dAgo: tokenFiat1dAgo ?? 0,
+        totalNativeTokenBalance: totalNativeTokenBalance ?? '0',
       };
     }
     // if selectedInternalAccount is undefined, return default 0 value.
@@ -1691,6 +1711,7 @@ export class Engine {
       tokenFiat: 0,
       ethFiat1dAgo: 0,
       tokenFiat1dAgo: 0,
+      totalNativeTokenBalance: '0',
     };
   };
 
