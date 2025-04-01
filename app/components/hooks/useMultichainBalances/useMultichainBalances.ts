@@ -83,6 +83,8 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
   const nonEvmChainId = useSelector(selectSelectedNonEvmNetworkChainId);
   ///: END:ONLY_INCLUDE_IF
 
+  const isPortfolioEnabled = isPortfolioViewEnabled();
+
   // Production balance calculartion (EVM)
   const getEvmBalance = useCallback(
     (account: InternalAccount) => {
@@ -90,7 +92,7 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
       let total;
 
       if (isOriginalNativeTokenSymbol) {
-        if (isPortfolioViewEnabled()) {
+        if (isPortfolioEnabled) {
           total =
             totalFiatBalancesCrossChain[account?.address as string]
               ?.totalFiatBalance ?? 0;
@@ -119,7 +121,12 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
         nativeTokenUnit: balance?.ticker,
       };
     },
-    [currentCurrency, isOriginalNativeTokenSymbol, totalFiatBalancesCrossChain],
+    [
+      currentCurrency,
+      isOriginalNativeTokenSymbol,
+      isPortfolioEnabled,
+      totalFiatBalancesCrossChain,
+    ],
   );
 
   ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
@@ -234,8 +241,6 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
     },
     [chainId],
   );
-
-  const isPortfolioEnabled = isPortfolioViewEnabled();
 
   // Create a stable reference for each account's balance data
   const allAccountBalances = useMemo(() => {
