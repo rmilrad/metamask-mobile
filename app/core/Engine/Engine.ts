@@ -136,7 +136,6 @@ import { zeroAddress } from 'ethereumjs-util';
 import {
   ApprovalType,
   handleFetch,
-  toChecksumHexAddress,
   type ChainId,
 } from '@metamask/controller-utils';
 import { ExtendedControllerMessenger } from '../ExtendedControllerMessenger';
@@ -208,6 +207,7 @@ import { TransactionControllerInit } from './controllers/transaction-controller'
 import I18n from '../../../locales/i18n';
 import { Platform } from '@metamask/profile-sync-controller/sdk';
 import { InternalAccount } from '@metamask/keyring-internal-api';
+import { toFormattedAddress } from '../../util/address';
 
 const NON_EMPTY = 'NON_EMPTY';
 
@@ -1572,8 +1572,9 @@ export class Engine {
       );
 
     if (selectedInternalAccount) {
-      const selectSelectedInternalAccountFormattedAddress =
-        toChecksumHexAddress(selectedInternalAccount.address);
+      const selectedInternalAccountFormattedAddress = toFormattedAddress(
+        selectedInternalAccount.address,
+      );
       const { currentCurrency } = CurrencyRateController.state;
       const { chainId, ticker } = NetworkController.getNetworkClientById(
         getGlobalNetworkClientId(NetworkController),
@@ -1600,19 +1601,19 @@ export class Engine {
       const decimalsToShow = (currentCurrency === 'usd' && 2) || undefined;
       if (
         accountsByChainId?.[toHexadecimal(chainId)]?.[
-          selectSelectedInternalAccountFormattedAddress
+          selectedInternalAccountFormattedAddress
         ]
       ) {
         // TODO - Non EVM accounts like BTC do not use hex formatted balances. We will need to modify this to use CAIP-2 identifiers in the future.
         const balanceBN = hexToBN(
           accountsByChainId[toHexadecimal(chainId)][
-            selectSelectedInternalAccountFormattedAddress
+            selectedInternalAccountFormattedAddress
           ].balance,
         );
         // TODO - Non EVM accounts like BTC do not use hex formatted balances. We will need to modify this to use CAIP-2 identifiers in the future.
         const stakedBalanceBN = hexToBN(
           accountsByChainId[toHexadecimal(chainId)][
-            selectSelectedInternalAccountFormattedAddress
+            selectedInternalAccountFormattedAddress
           ].stakedBalance || '0x00',
         );
         const totalAccountBalance = balanceBN
