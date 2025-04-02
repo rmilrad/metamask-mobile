@@ -100,6 +100,17 @@ export const PopularList = [
       imageUrl: 'ZK_SYNC',
       imageSource: require('../../images/zk-sync.png'),
     },
+    {
+    chainId: toHex('43111'),
+    nickname: 'Hemi Mainnet',
+    rpcUrl: `https://rpc.hemi.network/rpc`,
+    ticker: 'ETH',
+    warning: true,
+    rpcPrefs: {
+      blockExplorerUrl: 'https://explorer.hemi.xyz/',
+      imageUrl: 'HEMI',
+      imageSource: require('../../images/hemi.png'),
+    },
   },
 ];
 
