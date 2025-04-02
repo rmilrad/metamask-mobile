@@ -131,8 +131,8 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
 
   ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
   const getMultiChainFiatBalance = useCallback(
-    (balance: string, currency: string) => {
-      return formatWithThreshold(parseFloat(balance), 0, I18n.locale, {
+    (balance: number, currency: string) => {
+      return formatWithThreshold(balance, 0, I18n.locale, {
         style: 'currency',
         currency: currency.toUpperCase(),
       });
@@ -189,7 +189,7 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
       account: InternalAccount,
     ): {
       displayBalance: string;
-      totalFiatBalance: string;
+      totalFiatBalance: number;
       totalNativeTokenBalance: string;
       nativeTokenUnit: string;
     } => {
@@ -214,7 +214,7 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
       const evmAccountBalance = getEvmBalance(account);
       return {
         displayBalance: evmAccountBalance.displayBalance,
-        totalFiatBalance: evmAccountBalance.totalFiatBalance.toString(),
+        totalFiatBalance: evmAccountBalance.totalFiatBalance,
         totalNativeTokenBalance:
           evmAccountBalance.totalNativeTokenBalance.toString(),
         nativeTokenUnit: evmAccountBalance.nativeTokenUnit,

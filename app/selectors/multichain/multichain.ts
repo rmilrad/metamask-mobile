@@ -311,7 +311,7 @@ export const selectMultichainTokenList = createDeepEqualSelector(
 
 interface MultichainNetworkAggregatedBalance {
   totalNativeTokenBalance: Balance;
-  totalBalanceFiat: string;
+  totalBalanceFiat: number;
   balances: Record<string, Balance>;
 }
 
@@ -362,7 +362,7 @@ export const getMultichainNetworkAggregatedBalance = (
 
   return {
     totalNativeTokenBalance,
-    totalBalanceFiat: totalBalanceFiat.toString(),
+    totalBalanceFiat: totalBalanceFiat.toNumber(),
     balances,
   };
 };
@@ -384,7 +384,7 @@ export const selectSelectedAccountMultichainNetworkAggregatedBalance =
       if (!selectedAccount) {
         return {
           totalNativeTokenBalance: { amount: '0', unit: '' },
-          totalBalanceFiat: '0',
+          totalBalanceFiat: 0,
           balances: {},
         };
       }
