@@ -33,10 +33,10 @@ import {
   selectMultichainAssetsRates,
 } from '../../../selectors/multichain';
 import { selectSelectedNonEvmNetworkChainId } from '../../../selectors/multichainNetworkController';
+import { isEvmAccountType } from '@metamask/keyring-api';
 ///: END:ONLY_INCLUDE_IF
 import I18n from '../../../../locales/i18n';
 import { useCallback, useMemo } from 'react';
-import { isEvmAccountType } from '@metamask/keyring-api';
 
 /**
  * Hook to manage portfolio balance data across chains.
@@ -223,10 +223,12 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
     [
       getEvmBalance,
       getNonEvmDisplayBalance,
+      ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
       multichainAssets,
       multichainAssetsRates,
       multichainBalances,
       nonEvmChainId,
+      ///: END:ONLY_INCLUDE_IF
     ],
   );
 
