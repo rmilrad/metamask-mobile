@@ -222,8 +222,8 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
     },
     [
       getEvmBalance,
-      getNonEvmDisplayBalance,
       ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+      getNonEvmDisplayBalance,
       multichainAssets,
       multichainAssetsRates,
       multichainBalances,
@@ -233,8 +233,11 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
   );
 
   const getShouldShowAggregatedPercentage = useMemo(
-    () => (account: InternalAccount) => {
+    () => (account?: InternalAccount) => {
       ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
+      if (!account) {
+        return !isTestNet(chainId);
+      }
       return !isTestNet(chainId) && isEvmAccountType(account.type);
       ///: END:ONLY_INCLUDE_IF
 
