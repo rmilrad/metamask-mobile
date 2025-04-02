@@ -1,7 +1,7 @@
 import React from 'react';
 // eslint-disable-next-line @typescript-eslint/no-shadow
 import { waitFor, within } from '@testing-library/react-native';
-import { Alert, AlertButton, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import renderWithProvider from '../../../util/test/renderWithProvider';
 import AccountSelectorList from './AccountSelectorList';
 import { AccountListBottomSheetSelectorsIDs } from '../../../../e2e/selectors/wallet/AccountListBottomSheet.selectors';
@@ -18,9 +18,7 @@ import { CHAIN_IDS } from '@metamask/transaction-controller';
 import { AccountSelectorListProps } from './AccountSelectorList.types';
 import Engine from '../../../core/Engine';
 import { CellComponentSelectorsIDs } from '../../../../e2e/selectors/wallet/CellComponent.selectors';
-
-// eslint-disable-next-line import/no-namespace
-import { KeyringTypes } from '@metamask/keyring-controller';
+import { KeyringTypes as KeyringTypesEnum } from '@metamask/keyring-controller';
 
 const BUSINESS_ACCOUNT = '0xC4955C0d639D99699Bfd7Ec54d9FaFEe40e4D272';
 const PERSONAL_ACCOUNT = '0xd018538C87232FF95acbCe4870629b75640a78E7';
@@ -33,9 +31,9 @@ const MOCK_ACCOUNTS_CONTROLLER_STATE = createMockAccountsControllerState([
 
 // Mock for useAccounts
 jest.mock('../../../components/hooks/useAccounts', () => {
-  // Import KeyringTypes at the top of the module to avoid duplicate declaration
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const { KeyringTypes } = require('@metamask/keyring-controller');
-
+  // Use the KeyringTypes that was already imported at the top level
   const mockAccounts = [
     {
       name: 'Account 1',
@@ -248,14 +246,6 @@ describe('AccountSelectorList', () => {
   beforeEach(() => {
     onSelectAccount.mockClear();
     onRemoveImportedAccount.mockClear();
-
-    // Setup Alert mock for account removal tests
-    jest
-      .spyOn(Alert, 'alert')
-      .mockImplementation((_title, _message, buttons?: AlertButton[]) => {
-        // Simulate user clicking "Yes, remove it"
-        buttons?.[1]?.onPress?.();
-      });
   });
 
   it('renders correctly', async () => {
@@ -416,7 +406,7 @@ describe('AccountSelectorList', () => {
     });
   });
   it('allows account removal for simple keyring type', async () => {
-    const mockAlert = jest.spyOn(Alert, 'alert');
+    jest.clearAllMocks();
 
     // Create a state with a simple keyring account
     const mockAccountsWithSimple = createMockAccountsControllerState([
@@ -428,7 +418,7 @@ describe('AccountSelectorList', () => {
     mockAccountsWithSimple.internalAccounts.accounts[accountUuid].metadata = {
       ...mockAccountsWithSimple.internalAccounts.accounts[accountUuid].metadata,
       keyring: {
-        type: KeyringTypes.simple,
+        type: KeyringTypesEnum.simple,
       },
     };
 
@@ -443,27 +433,30 @@ describe('AccountSelectorList', () => {
       },
     };
 
-    const { getByTestId } = renderComponent(stateWithSimpleAccount);
+    // Mock Alert.alert to directly call the removal handler
+    jest
+      .spyOn(Alert, 'alert')
+      .mockImplementation((_title, _message, buttons) => {
+        if (buttons && buttons.length > 1 && buttons[1].onPress) {
+          buttons[1].onPress();
+        }
+      });
 
-    // Manually trigger the alert handler that would be triggered by long press
-    Alert.alert(
-      'Account removal',
-      'Do you really want to remove this account?',
-      [
-        { text: 'No', onPress: () => null, style: 'cancel' },
-        {
-          text: 'Yes, remove it',
-          onPress: () => {
-            onRemoveImportedAccount({
-              removedAddress: BUSINESS_ACCOUNT,
-            });
-            Engine.context.KeyringController.removeAccount(BUSINESS_ACCOUNT);
-          },
-          style: 'destructive',
-        },
-      ],
-      { cancelable: false },
+    const rendered = renderComponent(stateWithSimpleAccount);
+
+    // Wait for component to render
+    await waitFor(() => {
+      expect(
+        rendered.getAllByTestId(CellComponentSelectorsIDs.SELECT_WITH_MENU)
+          .length,
+      ).toBeGreaterThan(0);
+    });
+
+    // Get the cells and trigger onLongPress on the first one
+    const cells = rendered.getAllByTestId(
+      CellComponentSelectorsIDs.SELECT_WITH_MENU,
     );
+    cells[0].props.onLongPress();
 
     // Verify onRemoveImportedAccount was called with correct parameters
     expect(onRemoveImportedAccount).toHaveBeenCalledWith({
@@ -476,7 +469,7 @@ describe('AccountSelectorList', () => {
     );
   });
   it('allows account removal for snap keyring type', async () => {
-    const mockAlert = jest.spyOn(Alert, 'alert');
+    jest.clearAllMocks();
 
     const mockAccountsWithSnap = createMockAccountsControllerStateWithSnap(
       [MOCK_ADDRESS_1, MOCK_ADDRESS_2],
@@ -494,28 +487,33 @@ describe('AccountSelectorList', () => {
       },
     };
 
-    const { getByTestId } = renderComponent(stateWithSnapAccount);
+    // Mock Alert.alert to directly call the removal handler
+    jest
+      .spyOn(Alert, 'alert')
+      .mockImplementation((_title, _message, buttons) => {
+        if (buttons && buttons.length > 1 && buttons[1].onPress) {
+          buttons[1].onPress();
+        }
+      });
 
-    // Manually trigger the alert handler that would be triggered by long press
-    Alert.alert(
-      'Account removal',
-      'Do you really want to remove this account?',
-      [
-        { text: 'No', onPress: () => null, style: 'cancel' },
-        {
-          text: 'Yes, remove it',
-          onPress: () => {
-            onRemoveImportedAccount({
-              removedAddress: MOCK_ADDRESS_1,
-              nextActiveAddress: MOCK_ADDRESS_2,
-            });
-            Engine.context.KeyringController.removeAccount(MOCK_ADDRESS_1);
-          },
-          style: 'destructive',
-        },
-      ],
-      { cancelable: false },
+    const rendered = renderComponent(stateWithSnapAccount);
+
+    // Wait for component to render - just check for any UI element
+    await waitFor(() => {
+      expect(
+        rendered.getAllByTestId(CellComponentSelectorsIDs.SELECT_WITH_MENU)
+          .length,
+      ).toBeGreaterThan(0);
+    });
+
+    // Find all elements with the test ID and use the first one
+    const cells = rendered.getAllByTestId(
+      CellComponentSelectorsIDs.SELECT_WITH_MENU,
     );
+    expect(cells.length).toBeGreaterThan(0);
+
+    // Trigger long press on the first cell
+    cells[0].props.onLongPress();
 
     // Verify onRemoveImportedAccount was called with correct parameters
     expect(onRemoveImportedAccount).toHaveBeenCalledWith({
