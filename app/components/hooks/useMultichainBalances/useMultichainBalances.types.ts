@@ -1,3 +1,4 @@
+import { InternalAccount } from '@metamask/keyring-internal-api';
 import { AggregatedPercentageProps } from '../../../component-library/components-temp/Price/AggregatedPercentage/AggregatedPercentage.types';
 import { AggregatedPercentageCrossChainsProps } from '../../../component-library/components-temp/Price/AggregatedPercentage/AggregatedPercentageCrossChains.types';
 
@@ -14,6 +15,9 @@ export interface MultichainBalancesData {
 }
 
 export interface UseMultichainBalancesHook {
-  multichainBalancesForAllAccounts: Record<string, MultichainBalancesData>;
-  selectedAccountMultichainBalance: MultichainBalancesData | undefined;
+  multichainBalancesForAllAccounts: Record<
+    InternalAccount['id'],
+    MultichainBalancesData
+  >;
+  selectedAccountMultichainBalance?: MultichainBalancesData;
 }

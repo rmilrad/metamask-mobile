@@ -233,11 +233,9 @@ const useMultichainBalances = (): UseMultichainBalancesHook => {
   );
 
   const getShouldShowAggregatedPercentage = useMemo(
-    () => (account?: InternalAccount) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    () => (account: InternalAccount) => {
       ///: BEGIN:ONLY_INCLUDE_IF(keyring-snaps)
-      if (!account) {
-        return !isTestNet(chainId);
-      }
       return !isTestNet(chainId) && isEvmAccountType(account.type);
       ///: END:ONLY_INCLUDE_IF
 
