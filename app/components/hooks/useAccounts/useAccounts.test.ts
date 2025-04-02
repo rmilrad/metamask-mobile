@@ -8,11 +8,6 @@ import { Account } from './useAccounts.types';
 import { Hex } from '@metamask/utils';
 // eslint-disable-next-line import/no-namespace
 import * as networks from '../../../util/networks';
-// import { getAccountBalances } from './utils';
-
-jest.mock('./utils', () => ({
-  getAccountBalances: jest.fn(),
-}));
 
 jest.mock('../../../core/Engine', () => {
   const mockGetTotalEvmFiatAccountBalance = jest.fn().mockReturnValue({
@@ -49,7 +44,7 @@ const MOCK_ACCOUNT_1: Account = {
   yOffset: 0,
   isSelected: false,
   assets: {
-    fiatBalance: '\n0 ETH',
+    fiatBalance: '$0.00\n0 ETH',
   },
   balanceError: undefined,
 };
@@ -60,7 +55,7 @@ const MOCK_ACCOUNT_2: Account = {
   yOffset: 78,
   isSelected: true,
   assets: {
-    fiatBalance: '\n< 0.00001 ETH',
+    fiatBalance: '$0.00\n0 ETH',
   },
   balanceError: undefined,
 };

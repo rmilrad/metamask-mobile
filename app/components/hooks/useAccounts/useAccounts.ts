@@ -121,7 +121,7 @@ const useAccounts = ({
     internalAccounts.forEach((account) => {
       const balanceForAccount = multichainBalancesForAllAccounts?.[account.id];
       const displayBalance = balanceForAccount
-        ? `${balanceForAccount.displayBalance} \n ${balanceForAccount.totalNativeTokenBalance} ${balanceForAccount.nativeTokenUnit}`
+        ? `${balanceForAccount.displayBalance}\n${balanceForAccount.totalNativeTokenBalance} ${balanceForAccount.nativeTokenUnit}`
         : '';
 
       const error = checkBalanceError?.(
