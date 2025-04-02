@@ -75,6 +75,15 @@ describe('useMultichainBalances', () => {
   });
 
   it('returns default values when no balances are available', () => {
+    const mockBalance = {
+      ethFiat: 0,
+      tokenFiat: 0,
+      tokenFiat1dAgo: 0,
+      ethFiat1dAgo: 0,
+      totalNativeTokenBalance: '0',
+      ticker: 'ETH',
+    };
+
     const aggregatedBalance = {
       ethFiat: 0,
       tokenFiat: 0,
@@ -83,17 +92,18 @@ describe('useMultichainBalances', () => {
     };
 
     (Engine.getTotalEvmFiatAccountBalance as jest.Mock).mockReturnValue(
-      aggregatedBalance,
+      mockBalance,
     );
 
     const { result } = renderHook(() => useMultichainBalances());
 
-    expect(result.current.multichainBalancesForAllAccounts).toEqual({
+    expect(result.current.selectedAccountMultichainBalance).toEqual({
       displayBalance: '$0.00',
       displayCurrency: 'USD',
       tokenFiatBalancesCrossChains: [],
       totalFiatBalance: 0,
-      totalTokenFiat: 0,
+      totalNativeTokenBalance: '0',
+      nativeTokenUnit: 'ETH',
       shouldShowAggregatedPercentage: true,
       isPortfolioVieEnabled: false,
       aggregatedBalance,
@@ -101,6 +111,15 @@ describe('useMultichainBalances', () => {
   });
 
   it('calculates display balance correctly with ETH and token balances', () => {
+    const mockBalance = {
+      ethFiat: 100,
+      tokenFiat: 50,
+      tokenFiat1dAgo: 45,
+      ethFiat1dAgo: 95,
+      totalNativeTokenBalance: '0.05',
+      ticker: 'ETH',
+    };
+
     const aggregatedBalance = {
       ethFiat: 100,
       tokenFiat: 50,
@@ -109,16 +128,16 @@ describe('useMultichainBalances', () => {
     };
 
     (Engine.getTotalEvmFiatAccountBalance as jest.Mock).mockReturnValue(
-      aggregatedBalance,
+      mockBalance,
     );
 
     const { result } = renderHook(() => useMultichainBalances());
 
-    expect(result.current.multichainBalancesForAllAccounts.displayBalance).toBe(
-      '$150.00',
-    );
     expect(
-      result.current.multichainBalancesForAllAccounts.aggregatedBalance,
+      result.current.selectedAccountMultichainBalance?.displayBalance,
+    ).toBe('$150.00');
+    expect(
+      result.current.selectedAccountMultichainBalance?.aggregatedBalance,
     ).toEqual(aggregatedBalance);
   });
 
@@ -158,6 +177,19 @@ describe('useMultichainBalances', () => {
       },
     };
 
+    const mockBalance = {
+      ethFiat: 0,
+      tokenFiat: 0,
+      tokenFiat1dAgo: 0,
+      ethFiat1dAgo: 0,
+      totalNativeTokenBalance: '0.5',
+      ticker: 'ETH',
+    };
+
+    (Engine.getTotalEvmFiatAccountBalance as jest.Mock).mockReturnValue(
+      mockBalance,
+    );
+
     (useGetTotalFiatBalanceCrossChains as jest.Mock).mockReturnValue(
       mockTotalFiatBalancesCrossChain,
     );
@@ -165,27 +197,37 @@ describe('useMultichainBalances', () => {
     const { result } = renderHook(() => useMultichainBalances());
 
     expect(
-      result.current.multichainBalancesForAllAccounts.isPortfolioVieEnabled,
+      result.current.selectedAccountMultichainBalance?.isPortfolioVieEnabled,
     ).toBe(true);
     expect(
-      result.current.multichainBalancesForAllAccounts.totalFiatBalance,
+      result.current.selectedAccountMultichainBalance?.totalFiatBalance,
     ).toBe(mockTotalFiatBalance);
-    expect(result.current.multichainBalancesForAllAccounts.totalTokenFiat).toBe(
-      mockTokenFiatBalance,
-    );
-    expect(result.current.multichainBalancesForAllAccounts.displayBalance).toBe(
-      '$1,000.00',
-    );
+    expect(
+      result.current.selectedAccountMultichainBalance?.displayBalance,
+    ).toBe('$1,000.00');
   });
 
   it('does not show aggregated percentage on test networks', () => {
     (isTestNet as jest.Mock).mockReturnValue(true);
 
+    const mockBalance = {
+      ethFiat: 0,
+      tokenFiat: 0,
+      tokenFiat1dAgo: 0,
+      ethFiat1dAgo: 0,
+      totalNativeTokenBalance: '0',
+      ticker: 'ETH',
+    };
+
+    (Engine.getTotalEvmFiatAccountBalance as jest.Mock).mockReturnValue(
+      mockBalance,
+    );
+
     const { result } = renderHook(() => useMultichainBalances());
 
     expect(
-      result.current.multichainBalancesForAllAccounts
-        .shouldShowAggregatedPercentage,
+      result.current.selectedAccountMultichainBalance
+        ?.shouldShowAggregatedPercentage,
     ).toBe(false);
   });
 });
