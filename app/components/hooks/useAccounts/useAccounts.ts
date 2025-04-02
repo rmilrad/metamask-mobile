@@ -46,23 +46,14 @@ const useAccounts = ({
 
   const { multichainBalancesForAllAccounts } = useMultichainBalances();
 
-  // console.log(
-  //   'useAccounts multichainBalancesForAllAccounts',
-  //   JSON.stringify(multichainBalancesForAllAccounts, null, 2),
-  // );
-
   const isMultiAccountBalancesEnabled = useSelector(
     selectIsMultiAccountBalancesEnabled,
   );
-  // Agg balance End
-
-  // Memoize checkBalanceErrorFn so it doesn't cause an infinite loop
   const checkBalanceError = useCallback(
     (balance: string) => checkBalanceErrorFn?.(balance),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
-
   const fetchENSNames = useCallback(
     async ({
       flattenedAccounts,
@@ -133,7 +124,9 @@ const useAccounts = ({
         ? `${balanceForAccount.displayBalance} \n ${balanceForAccount.totalNativeTokenBalance} ${balanceForAccount.nativeTokenUnit}`
         : '';
 
-      const error = checkBalanceError?.(displayBalance);
+      const error = checkBalanceError?.(
+        balanceForAccount.totalFiatBalance.toString(),
+      );
       balances[account.id] = {
         displayBalance,
         balanceError: typeof error === 'string' ? error : undefined,
