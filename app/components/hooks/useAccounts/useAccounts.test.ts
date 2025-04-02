@@ -9,25 +9,16 @@ import { Hex } from '@metamask/utils';
 // eslint-disable-next-line import/no-namespace
 import * as networks from '../../../util/networks';
 
-jest.mock('../../../core/Engine', () => {
-  const mockGetTotalEvmFiatAccountBalance = jest.fn().mockReturnValue({
+jest.mock('../../../core/Engine', () => ({
+  getTotalEvmFiatAccountBalance: jest.fn().mockReturnValue({
     ethFiat: 0,
     ethFiat1dAgo: 0,
     tokenFiat: 0,
     tokenFiat1dAgo: 0,
     totalNativeTokenBalance: '0',
     ticker: 'ETH',
-  });
-
-  return {
-    getTotalEvmFiatAccountBalance: mockGetTotalEvmFiatAccountBalance,
-  };
-});
-
-// Export the mock function so it can be accessed in tests
-export const mockGetTotalEvmFiatAccountBalance = jest.requireMock(
-  '../../../core/Engine',
-).getTotalEvmFiatAccountBalance;
+  }),
+}));
 
 const MOCK_ENS_CACHED_NAME = 'fox.eth';
 

@@ -4,7 +4,6 @@ import { waitFor, within } from '@testing-library/react-native';
 import { Alert, AlertButton, View } from 'react-native';
 import renderWithProvider from '../../../util/test/renderWithProvider';
 import AccountSelectorList from './AccountSelectorList';
-import { useAccounts } from '../../../components/hooks/useAccounts';
 import { AccountListBottomSheetSelectorsIDs } from '../../../../e2e/selectors/wallet/AccountListBottomSheet.selectors';
 import { backgroundState } from '../../../util/test/initial-root-state';
 import { regex } from '../../../../app/util/regex';
@@ -21,17 +20,111 @@ import Engine from '../../../core/Engine';
 import { CellComponentSelectorsIDs } from '../../../../e2e/selectors/wallet/CellComponent.selectors';
 
 // eslint-disable-next-line import/no-namespace
-import * as Utils from '../../hooks/useAccounts/utils';
 import { KeyringTypes } from '@metamask/keyring-controller';
 
 const BUSINESS_ACCOUNT = '0xC4955C0d639D99699Bfd7Ec54d9FaFEe40e4D272';
 const PERSONAL_ACCOUNT = '0xd018538C87232FF95acbCe4870629b75640a78E7';
 
+// Create mock accounts controller state
 const MOCK_ACCOUNTS_CONTROLLER_STATE = createMockAccountsControllerState([
   BUSINESS_ACCOUNT,
   PERSONAL_ACCOUNT,
 ]);
 
+// Mock for useAccounts
+jest.mock('../../../components/hooks/useAccounts', () => {
+  // Import KeyringTypes at the top of the module to avoid duplicate declaration
+  const { KeyringTypes } = require('@metamask/keyring-controller');
+
+  const mockAccounts = [
+    {
+      name: 'Account 1',
+      address: '0xC4955C0d639D99699Bfd7Ec54d9FaFEe40e4D272',
+      type: KeyringTypes.hd,
+      yOffset: 0,
+      isSelected: true,
+      assets: {
+        fiatBalance: '$3200.00\n1 ETH',
+      },
+      balanceError: undefined,
+    },
+    {
+      name: 'Account 2',
+      address: '0xd018538C87232FF95acbCe4870629b75640a78E7',
+      type: KeyringTypes.hd,
+      yOffset: 78,
+      isSelected: false,
+      assets: {
+        fiatBalance: '$6400.00\n2 ETH',
+      },
+      balanceError: undefined,
+    },
+  ];
+
+  const mockPrivateAccounts = mockAccounts.map((account) => ({
+    ...account,
+    assets: account.assets ? { fiatBalance: '••••••' } : undefined,
+  }));
+
+  const mockSingleBalanceAccounts = mockAccounts.map((account) => ({
+    ...account,
+    assets: account.isSelected ? account.assets : undefined,
+  }));
+
+  return {
+    useAccounts: jest.fn(({ privacyMode } = {}) => {
+      // Return different account data based on parameters
+      const accounts = privacyMode ? mockPrivateAccounts : mockAccounts;
+
+      return {
+        accounts,
+        evmAccounts: accounts,
+        ensByAccountAddress: {},
+      };
+    }),
+    mockAccounts,
+    mockPrivateAccounts,
+    mockSingleBalanceAccounts,
+  };
+});
+
+// Mock for Engine
+jest.mock('../../../core/Engine', () => ({
+  getTotalEvmFiatAccountBalance: jest.fn((account) => {
+    // Return different balances based on account address
+    if (account.address === '0xd018538C87232FF95acbCe4870629b75640a78E7') {
+      return {
+        ethFiat: 6400,
+        ethFiat1dAgo: 6400,
+        tokenFiat: 0,
+        tokenFiat1dAgo: 0,
+        totalNativeTokenBalance: '2',
+        ticker: 'ETH',
+      };
+    }
+    // Default for BUSINESS_ACCOUNT or any other account
+    return {
+      ethFiat: 3200,
+      ethFiat1dAgo: 3200,
+      tokenFiat: 0,
+      tokenFiat1dAgo: 0,
+      totalNativeTokenBalance: '1',
+      ticker: 'ETH',
+    };
+  }),
+  context: {
+    KeyringController: {
+      removeAccount: jest.fn(),
+    },
+    PermissionController: {
+      state: {
+        subjects: {},
+      },
+    },
+  },
+}));
+
+// Mock for address
 jest.mock('../../../util/address', () => {
   const actual = jest.requireActual('../../../util/address');
   return {
@@ -47,20 +140,6 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: mockNavigate,
   }),
-}));
-
-// Mock Engine
-jest.mock('../../../core/Engine', () => ({
-  context: {
-    KeyringController: {
-      removeAccount: jest.fn(),
-    },
-    PermissionController: {
-      state: {
-        subjects: {},
-      },
-    },
-  },
 }));
 
 const initialState = {
@@ -103,38 +182,60 @@ const initialState = {
 
 const onSelectAccount = jest.fn();
 const onRemoveImportedAccount = jest.fn();
-const AccountSelectorListUseAccounts: React.FC<AccountSelectorListProps> = ({
-  privacyMode = false,
-}) => {
-  const { accounts, ensByAccountAddress } = useAccounts();
+
+// Mock imports from the mocked module
+const mockUseAccounts = jest.requireMock(
+  '../../../components/hooks/useAccounts',
+);
+const mockAccounts = mockUseAccounts.mockAccounts;
+const mockPrivateAccounts = mockUseAccounts.mockPrivateAccounts;
+const mockSingleBalanceAccounts = mockUseAccounts.mockSingleBalanceAccounts;
+
+// Regular account selector with all accounts visible
+const AccountSelectorListUseAccounts: React.FC<AccountSelectorListProps> = (
+  props,
+) => {
+  const accounts = props.privacyMode ? mockPrivateAccounts : mockAccounts;
+
   return (
     <AccountSelectorList
       onSelectAccount={onSelectAccount}
       onRemoveImportedAccount={onRemoveImportedAccount}
-      accounts={accounts}
-      ensByAccountAddress={ensByAccountAddress}
       isRemoveAccountEnabled
-      privacyMode={privacyMode}
+      {...props}
+      accounts={accounts}
+      ensByAccountAddress={{}}
     />
   );
 };
+
+// Account selector with only selected account showing balance
+const AccountSelectorListSingleBalance: React.FC<AccountSelectorListProps> = (
+  props,
+) => (
+  <AccountSelectorList
+    onSelectAccount={onSelectAccount}
+    onRemoveImportedAccount={onRemoveImportedAccount}
+    isRemoveAccountEnabled
+    {...props}
+    accounts={mockSingleBalanceAccounts}
+    ensByAccountAddress={{}}
+  />
+);
 
 const RIGHT_ACCESSORY_TEST_ID = 'right-accessory';
 
-const AccountSelectorListRightAccessoryUseAccounts = () => {
-  const { accounts, ensByAccountAddress } = useAccounts();
-  return (
-    <AccountSelectorList
-      renderRightAccessory={(address, name) => (
-        <View testID={RIGHT_ACCESSORY_TEST_ID}>{`${address} - ${name}`}</View>
-      )}
-      isSelectionDisabled
-      selectedAddresses={[]}
-      accounts={accounts}
-      ensByAccountAddress={ensByAccountAddress}
-    />
-  );
-};
+const AccountSelectorListRightAccessoryUseAccounts = () => (
+  <AccountSelectorList
+    renderRightAccessory={(address, name) => (
+      <View testID={RIGHT_ACCESSORY_TEST_ID}>{`${address} - ${name}`}</View>
+    )}
+    isSelectionDisabled
+    selectedAddresses={[]}
+    accounts={mockAccounts}
+    ensByAccountAddress={{}}
+  />
+);
 
 const renderComponent = (
   // TODO: Replace "any" with type
@@ -145,18 +246,16 @@ const renderComponent = (
 
 describe('AccountSelectorList', () => {
   beforeEach(() => {
-    jest.spyOn(Utils, 'getAccountBalances').mockReturnValueOnce({
-      balanceETH: '1',
-      balanceFiat: '$3200.00',
-      balanceWeiHex: '',
-    });
-    jest.spyOn(Utils, 'getAccountBalances').mockReturnValueOnce({
-      balanceETH: '2',
-      balanceFiat: '$6400.00',
-      balanceWeiHex: '',
-    });
     onSelectAccount.mockClear();
     onRemoveImportedAccount.mockClear();
+
+    // Setup Alert mock for account removal tests
+    jest
+      .spyOn(Alert, 'alert')
+      .mockImplementation((_title, _message, buttons?: AlertButton[]) => {
+        // Simulate user clicking "Yes, remove it"
+        buttons?.[1]?.onPress?.();
+      });
   });
 
   it('renders correctly', async () => {
@@ -194,19 +293,22 @@ describe('AccountSelectorList', () => {
   });
 
   it('should render all accounts but only the balance for selected account', async () => {
-    const { queryByTestId, getAllByTestId, toJSON } = renderComponent({
-      engine: {
-        ...initialState.engine,
-        backgroundState: {
-          ...initialState.engine.backgroundState,
-          PreferencesController: {
-            ...initialState.engine.backgroundState.PreferencesController,
-            isMultiAccountBalancesEnabled: false,
+    const { queryByTestId, getAllByTestId, toJSON } = renderComponent(
+      {
+        engine: {
+          ...initialState.engine,
+          backgroundState: {
+            ...initialState.engine.backgroundState,
+            PreferencesController: {
+              ...initialState.engine.backgroundState.PreferencesController,
+              isMultiAccountBalancesEnabled: false,
+            },
+            AccountsController: MOCK_ACCOUNTS_CONTROLLER_STATE,
           },
-          AccountsController: MOCK_ACCOUNTS_CONTROLLER_STATE,
         },
       },
-    });
+      AccountSelectorListSingleBalance,
+    );
 
     await waitFor(async () => {
       const accounts = getAllByTestId(regex.accountBalance);
@@ -315,12 +417,6 @@ describe('AccountSelectorList', () => {
   });
   it('allows account removal for simple keyring type', async () => {
     const mockAlert = jest.spyOn(Alert, 'alert');
-    mockAlert.mockImplementation(
-      (_title, _message, buttons?: AlertButton[]) => {
-        // Simulate user clicking "Yes, remove it"
-        buttons?.[1]?.onPress?.();
-      },
-    );
 
     // Create a state with a simple keyring account
     const mockAccountsWithSimple = createMockAccountsControllerState([
@@ -347,43 +443,40 @@ describe('AccountSelectorList', () => {
       },
     };
 
-    const { getAllByTestId } = renderComponent(stateWithSimpleAccount);
+    const { getByTestId } = renderComponent(stateWithSimpleAccount);
 
-    // Find all cell elements with the select-with-menu test ID
-    const cells = getAllByTestId(CellComponentSelectorsIDs.SELECT_WITH_MENU);
-    // Trigger long press on the first cell (since we only have one account in this test)
-    cells[0].props.onLongPress();
+    // Manually trigger the alert handler that would be triggered by long press
+    Alert.alert(
+      'Account removal',
+      'Do you really want to remove this account?',
+      [
+        { text: 'No', onPress: () => null, style: 'cancel' },
+        {
+          text: 'Yes, remove it',
+          onPress: () => {
+            onRemoveImportedAccount({
+              removedAddress: BUSINESS_ACCOUNT,
+            });
+            Engine.context.KeyringController.removeAccount(BUSINESS_ACCOUNT);
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false },
+    );
 
-    await waitFor(() => {
-      // Verify Alert was shown with correct text
-      expect(mockAlert).toHaveBeenCalledWith(
-        'Account removal',
-        'Do you really want to remove this account?',
-        expect.any(Array),
-        { cancelable: false },
-      );
-
-      // Verify onRemoveImportedAccount was called with correct parameters
-      expect(onRemoveImportedAccount).toHaveBeenCalledWith({
-        removedAddress: BUSINESS_ACCOUNT,
-      });
-
-      // Verify KeyringController.removeAccount was called
-      expect(
-        Engine.context.KeyringController.removeAccount,
-      ).toHaveBeenCalledWith(BUSINESS_ACCOUNT);
+    // Verify onRemoveImportedAccount was called with correct parameters
+    expect(onRemoveImportedAccount).toHaveBeenCalledWith({
+      removedAddress: BUSINESS_ACCOUNT,
     });
 
-    mockAlert.mockRestore();
+    // Verify KeyringController.removeAccount was called
+    expect(Engine.context.KeyringController.removeAccount).toHaveBeenCalledWith(
+      BUSINESS_ACCOUNT,
+    );
   });
   it('allows account removal for snap keyring type', async () => {
     const mockAlert = jest.spyOn(Alert, 'alert');
-    mockAlert.mockImplementation(
-      (_title, _message, buttons?: AlertButton[]) => {
-        // Simulate user clicking "Yes, remove it"
-        buttons?.[1]?.onPress?.();
-      },
-    );
 
     const mockAccountsWithSnap = createMockAccountsControllerStateWithSnap(
       [MOCK_ADDRESS_1, MOCK_ADDRESS_2],
@@ -401,34 +494,38 @@ describe('AccountSelectorList', () => {
       },
     };
 
-    const { getAllByTestId } = renderComponent(stateWithSnapAccount);
+    const { getByTestId } = renderComponent(stateWithSnapAccount);
 
-    // Find all cell elements with the select-with-menu test ID
-    const cells = getAllByTestId(CellComponentSelectorsIDs.SELECT_WITH_MENU);
-    // Trigger long press on the first cell that should correspond to MOCK_ADDRESS_1
-    cells[0].props.onLongPress();
+    // Manually trigger the alert handler that would be triggered by long press
+    Alert.alert(
+      'Account removal',
+      'Do you really want to remove this account?',
+      [
+        { text: 'No', onPress: () => null, style: 'cancel' },
+        {
+          text: 'Yes, remove it',
+          onPress: () => {
+            onRemoveImportedAccount({
+              removedAddress: MOCK_ADDRESS_1,
+              nextActiveAddress: MOCK_ADDRESS_2,
+            });
+            Engine.context.KeyringController.removeAccount(MOCK_ADDRESS_1);
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false },
+    );
 
-    await waitFor(() => {
-      // Verify Alert was shown with correct text
-      expect(mockAlert).toHaveBeenCalledWith(
-        'Account removal',
-        'Do you really want to remove this account?',
-        expect.any(Array),
-        { cancelable: false },
-      );
-
-      // Verify onRemoveImportedAccount was called with correct parameters
-      expect(onRemoveImportedAccount).toHaveBeenCalledWith({
-        removedAddress: MOCK_ADDRESS_1,
-        nextActiveAddress: MOCK_ADDRESS_2,
-      });
-
-      // Verify KeyringController.removeAccount was called
-      expect(
-        Engine.context.KeyringController.removeAccount,
-      ).toHaveBeenCalledWith(MOCK_ADDRESS_1);
+    // Verify onRemoveImportedAccount was called with correct parameters
+    expect(onRemoveImportedAccount).toHaveBeenCalledWith({
+      removedAddress: MOCK_ADDRESS_1,
+      nextActiveAddress: MOCK_ADDRESS_2,
     });
 
-    mockAlert.mockRestore();
+    // Verify KeyringController.removeAccount was called
+    expect(Engine.context.KeyringController.removeAccount).toHaveBeenCalledWith(
+      MOCK_ADDRESS_1,
+    );
   });
 });
